@@ -1,0 +1,16 @@
+{
+  "appId": "com.icewhale.casaos",
+  "appName": "CasaOS",
+  "webDir": "../UI/build/sysroot/var/lib/casaos/www",
+  "server": {
+    "url": "http://casaos.local",
+    "hostname": "localhost",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#ffffff",
+    "adjustMarginsForEdgeToEdge": "auto"
+  }
+}

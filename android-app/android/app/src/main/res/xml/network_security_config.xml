@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    CasaOS 自用版：允许明文 HTTP，以便直连局域网里的 NAS（http://192.168.x.x）。
+    同时保留系统 CA，用于 https 反代的场景。
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

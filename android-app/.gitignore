@@ -1,0 +1,22 @@
+# 依赖与构建缓存
+node_modules/
+.gradle-home/
+.npm-cache/
+
+# Gradle 构建产物
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# iOS（暂未使用）
+ios/App/Pods/
+ios/App/build/
+
+# 签名文件：自用口令的 keystore，可以安全提交；
+# 如果你换成了私有密钥，请把下面这行取消注释
+# mobile/casaos-release.keystore

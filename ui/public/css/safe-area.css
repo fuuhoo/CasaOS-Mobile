@@ -1,0 +1,160 @@
+/*
+ * CasaOS 移动端适配：全面屏（安全区）与手势
+ *
+ * ## 变量的来源
+ *
+ *   --sa-top / --sa-right / --sa-bottom / --sa-left
+ *
+ *   - iOS Safari / iOS PWA：直接取 CSS 的 env(safe-area-inset-*)，值是真实的安全区。
+ *   - Android WebView：env() 恒为 0，改由原生层通过 SystemInsets 插件写入真实值
+ *     （见 mobile/.../SystemInsetsPlugin.java 与 UI/src/plugins/native.js 的 setupSafeArea）。
+ *
+ *   两边最终都落到同一组变量上，下面的规则只管用变量，不用关心平台差异。
+ *
+ * ## 布局关系（重要）
+ *
+ *   #app 是 height:100dvh 的纵向 flex 容器：
+ *     - .top-bar   固定高度 2.75rem，position:relative
+ *     - .contents  flex:1，自己滚动
+ *     - .base-bar  position:fixed;bottom:0（浮在最上层）
+ *
+ *   顶栏撑高之后，.contents 会自动往下让位，所以 **.contents 不需要再补一次
+ *   --sa-top**，只需要把自身高度按顶栏撑高的量减掉，否则底部会多出一块空白。
+ *
+ * ## 关于 !important
+ *
+ *   组件里的样式是 scoped 的（会带 [data-v-xxx]），权重比这里的元素选择器高，
+ *   所以必须用 !important 才能覆盖。
+ */
+
+:root {
+	--sa-top: env(safe-area-inset-top, 0px);
+	--sa-right: env(safe-area-inset-right, 0px);
+	--sa-bottom: env(safe-area-inset-bottom, 0px);
+	--sa-left: env(safe-area-inset-left, 0px);
+
+	/* 顶栏基础高度 2.75rem = 44px */
+	--casa-topbar-h: calc(2.75rem + var(--sa-top));
+}
+
+/* ------------------------------------------------------------------
+ * 一、手势相关的基础修正
+ * ------------------------------------------------------------------ */
+
+html,
+body {
+	/* PWA / WebView 的下拉回弹（橡皮筋）会露出白底并触发刷新 */
+	overscroll-behavior-y: none;
+	/* 去掉移动端双击缩放的 300ms 延迟，让点击更跟手 */
+	touch-action: manipulation;
+	/* 去掉点击瞬间的灰色高亮 */
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* 图标与按钮长按不再弹出系统菜单，避免打断滑动手势 */
+html body button,
+html body .icon,
+html body .picon,
+html body .navbar-item {
+	-webkit-touch-callout: none;
+}
+
+/* ------------------------------------------------------------------
+ * 二、顶部：状态栏 / 挖孔
+ * ------------------------------------------------------------------ */
+
+/* 顶栏撑出安全区高度，但内部按钮仍保持 2.75rem 的点击区 */
+html body #app .top-bar {
+	box-sizing: border-box !important;
+	height: var(--casa-topbar-h) !important;
+	padding-top: var(--sa-top) !important;
+}
+
+html body #app .top-bar .navbar-item,
+html body #app .top-bar .navbar-brand {
+	height: 2.75rem !important;
+}
+
+/*
+ * 主内容区：顶栏变高后它会自动下移，这里只需要把高度等量减掉，
+ * 保证底部仍然贴着可视区域（否则底部会多出 --sa-top 高度的空白）。
+ */
+html body #app .contents {
+	height: calc(100% - 7rem - var(--sa-top) - var(--sa-bottom)) !important;
+}
+
+@media screen and (max-width: 480px) {
+	html body #app .contents {
+		height: calc(100% - 44px - var(--sa-top) - var(--sa-bottom)) !important;
+	}
+}
+
+/* ------------------------------------------------------------------
+ * 三、底部：Home Indicator / Android 手势条
+ * ------------------------------------------------------------------ */
+
+/*
+ * 底部固定条（App.vue 的 .base-bar）。
+ * 用 padding-bottom 把内容顶上去，渐变背景仍然铺到屏幕最下沿，
+ * 这样手势条区域看到的是渐变而不是空白。
+ */
+html body #app .base-bar {
+	padding-bottom: var(--sa-bottom) !important;
+}
+
+/* 弹窗内容：全屏弹窗（文件管理器等）的底边正好压在 Home Indicator 上 */
+html body .modal .modal-card {
+	padding-bottom: var(--sa-bottom);
+}
+
+/*
+ * 弹窗顶部也要避让状态栏。
+ *
+ * 弹窗（Modal）是覆盖在页面之上的独立层，它的 .modal-card 从视口顶部开始，
+ * 不会像页面顶栏那样被 .top-bar 的 padding-top 推开 —— 结果就是弹窗的
+ * 标题栏和右上角按钮会被状态栏的时间/电量图标压住。
+ *
+ * 这里给 .modal-card 补上顶部内边距，状态栏高度的那一条就空出来了。
+ */
+html body .modal .modal-card {
+	padding-top: var(--sa-top);
+}
+
+/* Buefy 通知从右上角弹出，避开状态栏 */
+html body .notification {
+	top: calc(1.5rem + var(--sa-top)) !important;
+}
+
+/* ------------------------------------------------------------------
+ * 四、横屏：刘海在左右两侧
+ * ------------------------------------------------------------------ */
+
+html body #app .top-bar {
+	padding-left: var(--sa-left) !important;
+	padding-right: var(--sa-right) !important;
+}
+
+html body #app .contents {
+	padding-left: var(--sa-left) !important;
+	padding-right: var(--sa-right) !important;
+}
+
+html body .modal .modal-card {
+	padding-left: var(--sa-left);
+	padding-right: var(--sa-right);
+}
+
+/* 侧边抽屉在横屏时需要避开刘海 */
+html body #app .side-bar {
+	margin-left: var(--sa-left) !important;
+}
+
+/* ------------------------------------------------------------------
+ * 五、横屏 + 虚拟键盘：输入框不要被键盘顶到屏幕外
+ * ------------------------------------------------------------------ */
+
+@media screen and (max-height: 480px) {
+	html body #app .contents {
+		height: calc(100% - 44px) !important;
+	}
+}

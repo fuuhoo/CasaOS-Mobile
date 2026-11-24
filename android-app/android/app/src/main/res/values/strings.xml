@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CasaOS</string>
+    <string name="title_activity_main">CasaOS</string>
+    <string name="package_name">com.icewhale.casaos</string>
+    <string name="custom_url_scheme">com.icewhale.casaos</string>
+    <string name="shortcut_server_address">设置服务器地址</string>
+</resources>

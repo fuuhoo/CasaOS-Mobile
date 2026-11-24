@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    桌面快捷方式：长按 CasaOS 图标就能看到「设置服务器地址」，
+    不必先进 App 再等它连不上才弹框。
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="server_address"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_server_address">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.icewhale.casaos"
+            android:targetClass="com.icewhale.casaos.MainActivity">
+            <extra
+                android:name="casaos_open_address"
+                android:value="true" />
+        </intent>
+    </shortcut>
+</shortcuts>

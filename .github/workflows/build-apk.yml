@@ -1,0 +1,150 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: '发布到 Release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: 构建 APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+
+      - name: 安装 pnpm 9.0.6
+        # UI 的 package.json 用 packageManager 锁定了 pnpm 9.0.6。
+        # 换更新的版本会导致依赖树坏掉（terser-webpack-plugin 报
+        # "TypeError: validate is not a function"），所以这里必须用 corepack
+        # 拉起指定版本，不能用 setup-node 自带的 pnpm。
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.6 --activate
+          pnpm --version
+
+      - name: 设置 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 设置 Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 缓存 Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/Android/Sdk
+          key: android-${{ runner.os }}-${{ hashFiles('android-app/android/app/build.gradle') }}
+          restore-keys: android-${{ runner.os }}-
+
+      - name: 安装 Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 接受 Android SDK 许可
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" > /dev/null 2>&1 || true
+
+      - name: 安装 UI 依赖
+        working-directory: ui
+        run: |
+          # hoisted 模式：pnpm 9 默认的 isolated 模式会创建大量符号链接，
+          # 在 CI 上容易出问题，统一用 hoisted。
+          #
+          # 不能加 --ignore-scripts：@vue-office/* 的 postinstall 负责生成
+          # lib/index.js 与 lib/index.css，跳过会导致 DocViewer/ExcelViewer
+          # 编译报 "Can't resolve '@vue-office/docx'"。
+          pnpm install --frozen-lockfile --config.node-linker=hoisted
+
+      - name: 补跑 @vue-office 的 postinstall
+        working-directory: ui
+        # pnpm 复用已安装状态时可能不再执行 postinstall，这里兜底跑一次。
+        run: |
+          for pkg in docx excel pdf; do
+            script="node_modules/@vue-office/$pkg/lib/script/postinstall.js"
+            if [ -f "$script" ]; then node "$script" || true; fi
+          done
+
+      - name: 构建 CasaOS-UI
+        working-directory: ui
+        run: |
+          node message_bus.build.js
+          node node_modules/@vue/cli-service/bin/vue-cli-service.js build \
+            --dest ./build/sysroot/var/lib/casaos/www/ \
+            --mode production
+
+      - name: 校验 PWA 产物
+        run: |
+          out=ui/build/sysroot/var/lib/casaos/www
+          for f in index.html sw.js site.webmanifest; do
+            test -f "$out/$f" || { echo "缺少 $f"; exit 1; }
+          done
+          echo "产物 $(find "$out" -type f | wc -l) 个文件"
+
+      - name: 安装 Capacitor 依赖
+        working-directory: android-app
+        run: npm install
+
+      - name: 同步网页资源到 Android 工程
+        working-directory: android-app
+        run: npx cap sync android
+
+      - name: 构建 release APK
+        working-directory: android-app/android
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: 收集 APK
+        run: |
+          mkdir -p dist
+          cp android-app/android/app/build/outputs/apk/release/app-release.apk \
+             dist/CasaOS-${{ github.run_number }}-release.apk
+          ls -la dist/
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: casaos-apk
+          path: dist/*.apk
+          retention-days: 30
+
+      - name: 发布到 Release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release)
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true
+          body: |
+            CasaOS 移动客户端（Android）。
+
+            安装方式：下载 APK 后传到手机，允许「安装未知来源应用」后点击安装。
+
+            - 服务器地址在 App 内设置：顶栏齿轮 → 系统设置 → 服务器地址
+            - 也可长按桌面图标走快捷方式（部分启动器支持）

@@ -1,0 +1,33 @@
+# 依赖与构建缓存
+node_modules/
+.pnpm9/
+.pnpm-store9/
+.pnpm-home9/
+
+# Gradle
+.gradle/
+.gradle-home/
+build/
+local.properties
+*.apk
+*.aab
+
+# npm
+.npm-cache/
+
+# 编辑器
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 密钥（自用 keystore 已刻意提交；换成私有密钥后请取消注释）
+# *.keystore
+# *.jks

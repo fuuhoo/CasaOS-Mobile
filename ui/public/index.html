@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="">
+
+<head>
+	<meta charset="utf-8">
+	<meta content="IE=edge" http-equiv="X-UA-Compatible">
+	<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport">
+	<meta content="noindex" name="robots">
+	<link href="<%= BASE_URL %>img/icon/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+	<link href="<%= BASE_URL %>site.webmanifest" rel="manifest">
+	<meta content="#da532c" name="msapplication-TileColor">
+	<meta content="#ffffff" name="theme-color">
+	<!-- PWA standalone (iOS 16.4 以下需要显式声明才能全屏运行) -->
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="yes" name="mobile-web-app-capable">
+	<!--
+		状态栏样式：
+		用 default 而不是 black-translucent —— 后者会让内容延伸到状态栏下方，
+		而状态栏文字固定为白色，CasaOS 浅色主题的顶栏是白底，会导致状态栏文字不可见。
+		default 会由系统保留状态栏区域，从根本上避免遮挡。
+	-->
+	<meta content="default" name="apple-mobile-web-app-status-bar-style">
+	<meta content="CasaOS" name="apple-mobile-web-app-title">
+	<link href="<%= BASE_URL %>favicon.ico" rel="shortcut icon" type="image/x-icon">
+	<link href="<%= BASE_URL %>favicon.ico" mask="" rel="icon" sizes="any">
+	<link href="<%= BASE_URL %>css/custom.css" rel="stylesheet">
+	<!-- 全面屏 / 安全区 / 手势适配（放在 custom.css 之后，保证优先级） -->
+	<link href="<%= BASE_URL %>css/safe-area.css" rel="stylesheet">
+	<title>
+		CasaOS
+	</title>
+</head>
+
+<body>
+	<noscript>
+		<strong>We're sorry but CasaOS doesn't work properly without JavaScript enabled.
+			Please enable it to continue.</strong>
+	</noscript>
+	<div id="app"></div>
+	<!-- built files will be auto injected -->
+	<script type="text/javascript" src="<%= BASE_URL %>js/custom.js"></script>
+</body>
+
+</html>
