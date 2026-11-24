@@ -1,7 +1,7 @@
 {
   "appId": "com.icewhale.casaos",
   "appName": "CasaOS",
-  "webDir": "../UI/build/sysroot/var/lib/casaos/www",
+  "webDir": "../ui/build/sysroot/var/lib/casaos/www",
   "server": {
     "url": "http://casaos.local",
     "hostname": "localhost",

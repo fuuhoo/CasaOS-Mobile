@@ -138,7 +138,12 @@ jobs:
 
       - name: 同步网页资源到 Android 工程
         working-directory: android-app
-        run: npx cap sync android
+        run: |
+          # cap sync 会往 assets/ 目录写 capacitor.config.json 与
+          # capacitor.plugins.json，但仓库里不提交这两个文件（.gitignore 里排除了），
+          # 所以目录可能不存在，先建出来。
+          mkdir -p android/app/src/main/assets
+          npx cap sync android
 
       - name: 构建 release APK
         working-directory: android-app/android
