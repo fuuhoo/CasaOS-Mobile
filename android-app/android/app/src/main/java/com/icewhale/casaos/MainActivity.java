@@ -266,7 +266,7 @@ public class MainActivity extends BridgeActivity {
             settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
             Log.i(TAG, "WebView HTTP cache disabled");
         }
-
+    }
 
     private void applyServerUrl(String url) {
         try {
