@@ -29,8 +29,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.20.0'
-          cache: pnpm
-          cache-dependency-path: ui/pnpm-lock.yaml
+          # 注意：这里不能开 cache: pnpm —— setup-node 的缓存功能要求 pnpm
+          # 已经装好，而 pnpm 是靠 corepack 在下一步才启用的，
+          # 结果会报 "Unable to locate executable file: pnpm"。
+          # pnpm 的 store 缓存改为单独一步处理。
 
       - name: 安装 pnpm 9.0.6
         # UI 的 package.json 用 packageManager 锁定了 pnpm 9.0.6。
@@ -41,6 +43,13 @@ jobs:
           corepack enable
           corepack prepare pnpm@9.0.6 --activate
           pnpm --version
+
+      - name: 缓存 pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('ui/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
 
       - name: 设置 JDK 21
         uses: actions/setup-java@v4
