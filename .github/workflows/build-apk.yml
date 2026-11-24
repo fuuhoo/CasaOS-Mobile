@@ -95,12 +95,16 @@ jobs:
       - name: 安装 UI 依赖
         working-directory: ui
         run: |
+          # 用 npmmirror 镜像：UI 依赖里有 @icewhale/ 开头的包，
+          # 直接从 registry.npmjs.org 拉会 404（这些包只在镜像上有）。
+          #
           # hoisted 模式：pnpm 9 默认的 isolated 模式会创建大量符号链接，
           # 在 CI 上容易出问题，统一用 hoisted。
           #
           # 不能加 --ignore-scripts：@vue-office/* 的 postinstall 负责生成
           # lib/index.js 与 lib/index.css，跳过会导致 DocViewer/ExcelViewer
           # 编译报 "Can't resolve '@vue-office/docx'"。
+          pnpm config set registry https://registry.npmmirror.com
           pnpm install --frozen-lockfile --config.node-linker=hoisted
 
       - name: 补跑 @vue-office 的 postinstall
