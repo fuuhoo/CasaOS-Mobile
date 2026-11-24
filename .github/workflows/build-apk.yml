@@ -71,16 +71,26 @@ jobs:
           restore-keys: android-${{ runner.os }}-
 
       - name: 安装 Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 接受 Android SDK 许可并安装组件
-        # 顺序很关键：setup-android 之后许可状态是未接受的，
-        # 必须先 yes | sdkmanager --licenses 再装 platform/build-tools。
-        # 反过来的话 sdkmanager 会因为没接受许可而退出码 1。
+        # 不用 android-actions/setup-android —— 它的 v3 在安装 "tools" 这个
+        # 已下架的包名时会失败（Warning: Failed to find package 'tools'）。
+        # 这里手动装 cmdline-tools，再装 platform/build-tools。
         run: |
+          set -e
+          SDK_ROOT="$ANDROID_SDK_ROOT"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+          cd /tmp
+          curl -fsSL -o cmdtools.zip \
+            "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q cmdtools.zip -d "$SDK_ROOT/cmdline-tools"
+          # 解压出来是 cmdline-tools/，要挪到 cmdline-tools/latest/
+          mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+          rm -f cmdtools.zip
+
+          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-          sdkmanager --list_installed | head -20
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT"
+          ls "$SDK_ROOT"
 
       - name: 安装 UI 依赖
         working-directory: ui
