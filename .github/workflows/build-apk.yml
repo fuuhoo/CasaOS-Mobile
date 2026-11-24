@@ -73,10 +73,14 @@ jobs:
       - name: 安装 Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: 接受 Android SDK 许可
+      - name: 接受 Android SDK 许可并安装组件
+        # 顺序很关键：setup-android 之后许可状态是未接受的，
+        # 必须先 yes | sdkmanager --licenses 再装 platform/build-tools。
+        # 反过来的话 sdkmanager 会因为没接受许可而退出码 1。
         run: |
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" > /dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager --list_installed | head -20
 
       - name: 安装 UI 依赖
         working-directory: ui
